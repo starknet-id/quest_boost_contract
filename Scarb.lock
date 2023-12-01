@@ -3,8 +3,8 @@ version = 1
 
 [[package]]
 name = "openzeppelin"
-version = "0.7.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.7.0#61a2505fe0c0f19b5de2b3f8dedf421ba2cff657"
+version = "0.8.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.8.0#c23e8e96de60e6e3159b1ff8591a1187269c0eb7"
 
 [[package]]
 name = "quest_boost_contract"
