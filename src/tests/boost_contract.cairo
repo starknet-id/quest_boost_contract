@@ -7,7 +7,7 @@ use option::OptionTrait;
 use starknet::{
     class_hash::Felt252TryIntoClassHash, ContractAddress, SyscallResultTrait, get_caller_address
 };
-use openzeppelin::tests::mocks::erc20_mocks::{CamelERC20Mock, SnakeERC20Mock};
+use openzeppelin::tests::mocks::erc20_mocks::{CamelERC20Mock};
 use traits::TryInto;
 use openzeppelin::utils::serde::SerializedAppend;
 use quest_boost_contract::main::QuestBoost;
