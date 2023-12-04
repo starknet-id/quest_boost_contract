@@ -56,21 +56,19 @@ mod QuestBoost {
             self._admin_address.write(new_admin);
         }
 
-        fn fill(self: @ContractState, amount: u256, token: ContractAddress) {
+        fn fill(ref self: ContractState, amount: u256, token: ContractAddress) {
             let caller: ContractAddress = get_caller_address();
             let contract_address: ContractAddress = get_contract_address();
             let starknet_erc20 = IERC20CamelDispatcher { contract_address: token };
             // check if admin has called fill contract
             assert(caller == self._admin_address.read(), 'only admin can fill');
 
-            assert(starknet_erc20.balanceOf(caller) > amount, 'amount more than balance');
-
             // transfer tokens from caller to contract
             let transfer_result = starknet_erc20.transferFrom(caller, contract_address, amount);
             assert(transfer_result, 'transfer failed');
         }
 
-        fn withdraw_all(self: @ContractState, token: ContractAddress) {
+        fn withdraw_all(ref self: ContractState, token: ContractAddress) {
             let caller: ContractAddress = get_caller_address();
             let contract_address: ContractAddress = get_contract_address();
 

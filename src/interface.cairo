@@ -12,8 +12,8 @@ trait IQuestBoost<TContractState> {
         signature: Span<felt252>,
         boost_id: felt252
     );
-    fn fill(self: @TContractState, amount: u256, token: ContractAddress);
-    fn withdraw_all(self: @TContractState, token: ContractAddress);
+    fn fill(ref self: TContractState, amount: u256, token: ContractAddress);
+    fn withdraw_all(ref self: TContractState, token: ContractAddress);
 
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash);
 }
