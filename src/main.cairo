@@ -21,7 +21,8 @@ mod QuestBoost {
 
     #[storage]
     struct Storage {
-        blacklist: LegacyMap::<felt252, bool>,
+        blacklist: LegacyMap::<u128, bool>,
+        boostMap: LegacyMap::<u128, bool>,
         public_key: felt252,
         _admin_address: ContractAddress
     }
@@ -31,6 +32,7 @@ mod QuestBoost {
     #[derive(Drop, starknet::Event)]
     enum Event {
         on_claim: on_claim,
+        on_fill: on_fill
     }
 
 
@@ -41,6 +43,15 @@ mod QuestBoost {
         #[key]
         address: ContractAddress
     }
+
+    #[derive(Drop, starknet::Event)]
+    struct on_fill {
+        token: ContractAddress,
+        amount: u256,
+        #[key]
+        boost_id: u128
+    }
+
 
     #[constructor]
     fn constructor(ref self: ContractState, owner: ContractAddress, public_key: felt252) {
@@ -56,16 +67,22 @@ mod QuestBoost {
             self._admin_address.write(new_admin);
         }
 
-        fn fill(ref self: ContractState, amount: u256, token: ContractAddress) {
+        fn create_boost(
+            ref self: ContractState, boost_id: u128, amount: u256, token: ContractAddress
+        ) {
+            // check if boost_id is blacklisted
+            let boostMap_data = self.boostMap.read(boost_id);
+            assert(!boostMap_data, 'boost already created');
+
             let caller: ContractAddress = get_caller_address();
             let contract_address: ContractAddress = get_contract_address();
             let starknet_erc20 = IERC20CamelDispatcher { contract_address: token };
-            // check if admin has called fill contract
-            assert(caller == self._admin_address.read(), 'only admin can fill');
-
             // transfer tokens from caller to contract
             let transfer_result = starknet_erc20.transferFrom(caller, contract_address, amount);
             assert(transfer_result, 'transfer failed');
+
+            self.boostMap.write(boost_id, true);
+            self.emit(Event::on_fill(on_fill { amount: amount, token: token, boost_id: boost_id }));
         }
 
         fn withdraw_all(ref self: ContractState, token: ContractAddress) {
@@ -80,7 +97,7 @@ mod QuestBoost {
             assert(caller == self._admin_address.read(), 'only admin can withdraw');
 
             // transfer tokens from caller to contract
-            let transfer_result = starknet_erc20.transferFrom(contract_address, caller, balance);
+            let transfer_result = starknet_erc20.transfer(caller, balance);
             assert(transfer_result, 'transfer failed');
         }
 
@@ -89,19 +106,19 @@ mod QuestBoost {
             amount: u256,
             token: ContractAddress,
             signature: Span<felt252>,
-            boost_id: felt252
+            boost_id: u128
         ) {
             let r = *signature.at(0);
             let s = *signature.at(1);
 
             // check if signature is blacklisted
-            let blacklist_data = self.blacklist.read(r);
+            let blacklist_data = self.blacklist.read(boost_id);
             assert(!blacklist_data, 'blacklisted');
 
             // check if signature is valid
             let caller: ContractAddress = get_caller_address();
             let hashed = pedersen(
-                boost_id,
+                boost_id.into(),
                 pedersen(
                     amount.low.into(),
                     pedersen(amount.high.into(), pedersen(token.into(), caller.into()))
@@ -114,7 +131,7 @@ mod QuestBoost {
             );
 
             // add r to the blacklist
-            self.blacklist.write(r, true);
+            self.blacklist.write(boost_id, true);
 
             // transfer tokens from contract to caller
             let starknet_erc20 = IERC20CamelDispatcher { contract_address: token };
@@ -126,8 +143,7 @@ mod QuestBoost {
             );
             starknet_erc20.approve(get_contract_address(), amount);
             // transfer tokens from caller to contract
-            let transfer_result = starknet_erc20
-                .transferFrom(get_contract_address(), caller, amount);
+            let transfer_result = starknet_erc20.transfer(caller, amount);
             assert(transfer_result, 'transfer failed');
 
             // emit event
@@ -146,6 +162,11 @@ mod QuestBoost {
             // todo: use components
             assert(!new_class_hash.is_zero(), 'Class hash cannot be zero');
             starknet::replace_class_syscall(new_class_hash).unwrap();
+        }
+
+        fn get_balance(self: @ContractState, token: ContractAddress) -> u256 {
+            let starknet_erc20 = IERC20CamelDispatcher { contract_address: token };
+            starknet_erc20.balanceOf(get_contract_address())
         }
     }
 }

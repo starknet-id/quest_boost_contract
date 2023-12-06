@@ -10,11 +10,12 @@ trait IQuestBoost<TContractState> {
         amount: u256,
         token: ContractAddress,
         signature: Span<felt252>,
-        boost_id: felt252
+        boost_id: u128
     );
-    fn fill(ref self: TContractState, amount: u256, token: ContractAddress);
+    fn create_boost(ref self: TContractState, boost_id: u128, amount: u256, token: ContractAddress);
     fn withdraw_all(ref self: TContractState, token: ContractAddress);
 
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash);
+    fn get_balance(self: @TContractState, token: ContractAddress) -> u256;
 }
 

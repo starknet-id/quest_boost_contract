@@ -19,7 +19,6 @@ use quest_boost_contract::interface::{
 use openzeppelin::token::erc20::interface::{
     IERC20Camel, IERC20CamelDispatcher, IERC20CamelDispatcherTrait
 };
-use super::utils::mock_erc20::ERC20Component;
 
 
 fn deploy(contract_class_hash: felt252, calldata: Array<felt252>) -> ContractAddress {
@@ -136,22 +135,9 @@ fn test_fill() {
     let token_id: ContractAddress = erc20.contract_address;
     set_contract_address(ADMIN());
     erc20.approve(quest_boost.contract_address, amount);
-    quest_boost.fill(amount, token_id);
+    let boost_id = 1;
+    quest_boost.create_boost(boost_id, amount, token_id);
 }
-
-#[test]
-#[available_gas(20000000000)]
-#[should_panic(expected: ('only admin can fill', 'ENTRYPOINT_FAILED',))]
-fn test_fill_not_owner() {
-    let quest_boost = deploy_contract();
-    let erc20 = deploy_token(ADMIN(), 10000);
-    let amount: u256 = 1000;
-    let token_id: ContractAddress = erc20.contract_address;
-    set_contract_address(0x123.try_into().unwrap());
-    erc20.approve(quest_boost.contract_address, amount);
-    quest_boost.fill(amount, token_id);
-}
-
 
 #[test]
 #[available_gas(20000000000)]
