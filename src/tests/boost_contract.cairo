@@ -88,7 +88,7 @@ fn test_claim() {
     );
     let boost_id = 1;
     erc20.approve(ADMIN(), amount);
-    quest_boost.claim(amount, token_id, array![sig_0, sig_1].span(), boost_id);
+    quest_boost.claim(amount, token_id, boost_id, array![sig_0, sig_1].span());
 }
 
 #[test]
@@ -103,7 +103,7 @@ fn test_claim_invalid_sign() {
     let (sig_0, sig_1) = (123, 123);
     let boost_id = 1;
     erc20.approve(ADMIN(), amount);
-    quest_boost.claim(amount, token_id, array![sig_0, sig_1].span(), boost_id);
+    quest_boost.claim(amount, token_id, boost_id, array![sig_0, sig_1].span());
 }
 
 
@@ -122,7 +122,7 @@ fn test_claim_invalid_caller() {
     );
     let boost_id = 1;
     erc20.approve(ADMIN(), amount);
-    quest_boost.claim(amount, token_id, array![sig_0, sig_1].span(), boost_id);
+    quest_boost.claim(amount, token_id, boost_id, array![sig_0, sig_1].span());
 }
 
 
