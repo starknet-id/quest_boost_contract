@@ -2,15 +2,12 @@ use starknet::{ContractAddress, ClassHash};
 
 #[starknet::interface]
 trait IQuestBoost<TContractState> {
-    // admin
-    fn set_admin(ref self: TContractState, new_admin: ContractAddress);
-
     fn claim(
         ref self: TContractState,
         amount: u256,
         token: ContractAddress,
-        signature: Span<felt252>,
-        boost_id: u128
+        boost_id: u128,
+        signature: Span<felt252>
     );
     fn create_boost(ref self: TContractState, boost_id: u128, amount: u256, token: ContractAddress);
     fn withdraw_all(ref self: TContractState, token: ContractAddress);

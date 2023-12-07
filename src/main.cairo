@@ -42,8 +42,8 @@ mod QuestBoost {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        on_claim: on_claim,
-        on_fill: on_fill,
+        OnClaim: on_claim,
+        OnBoostCreated: on_boost_created,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
     }
@@ -58,7 +58,7 @@ mod QuestBoost {
     }
 
     #[derive(Drop, starknet::Event)]
-    struct on_fill {
+    struct on_boost_created {
         token: ContractAddress,
         amount: u256,
         #[key]
@@ -74,12 +74,6 @@ mod QuestBoost {
 
     #[external(v0)]
     impl QuestBoost of IQuestBoost<ContractState> {
-        // ADMIN
-        fn set_admin(ref self: ContractState, new_admin: ContractAddress) {
-            assert(get_caller_address() == self.ownable.owner(), 'you are not admin');
-            self.ownable.transfer_ownership(new_admin);
-        }
-
         fn create_boost(
             ref self: ContractState, boost_id: u128, amount: u256, token: ContractAddress
         ) {
@@ -95,7 +89,12 @@ mod QuestBoost {
             assert(transfer_result, 'transfer failed');
 
             self.boostMap.write(boost_id, true);
-            self.emit(Event::on_fill(on_fill { amount: amount, token: token, boost_id: boost_id }));
+            self
+                .emit(
+                    Event::OnBoostCreated(
+                        on_boost_created { amount: amount, token: token, boost_id: boost_id }
+                    )
+                );
         }
 
         fn withdraw_all(ref self: ContractState, token: ContractAddress) {
@@ -117,8 +116,8 @@ mod QuestBoost {
             ref self: ContractState,
             amount: u256,
             token: ContractAddress,
-            signature: Span<felt252>,
-            boost_id: u128
+            boost_id: u128,
+            signature: Span<felt252>
         ) {
             let r = *signature.at(0);
             let s = *signature.at(1);
@@ -160,7 +159,7 @@ mod QuestBoost {
             // emit event
             self
                 .emit(
-                    Event::on_claim(
+                    Event::OnClaim(
                         on_claim {
                             timestamp: get_block_timestamp(), amount: amount, address: caller
                         }
