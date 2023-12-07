@@ -10,7 +10,7 @@ mod QuestBoost {
     use core::starknet::event::EventEmitter;
     use core::array::SpanTrait;
     use openzeppelin::{
-        account, access::ownable::OwnableComponent,
+        upgrades::UpgradeableComponent, account, access::ownable::OwnableComponent,
         token::erc20::interface::{IERC20Camel, IERC20CamelDispatcher, IERC20CamelDispatcherTrait}
     };
     use starknet::{
@@ -22,11 +22,15 @@ mod QuestBoost {
     use core::pedersen::pedersen;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
 
     // add an owner
     #[abi(embed_v0)]
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
+    /// Upgradeable
+    impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
 
 
     #[storage]
@@ -36,6 +40,8 @@ mod QuestBoost {
         public_key: felt252,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        upgradeable: UpgradeableComponent::Storage
     }
 
     // events
@@ -46,6 +52,8 @@ mod QuestBoost {
         OnBoostCreated: on_boost_created,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        UpgradeableEvent: UpgradeableComponent::Event
     }
 
 
@@ -168,10 +176,11 @@ mod QuestBoost {
         }
 
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
-            assert(get_caller_address() == self.ownable.owner(), 'you are not admin');
-            // todo: use components
-            assert(!new_class_hash.is_zero(), 'Class hash cannot be zero');
-            starknet::replace_class_syscall(new_class_hash).unwrap();
+            // This function can only be called by the owner
+            self.ownable.assert_only_owner();
+
+            // Replace the class hash upgrading the contract
+            self.upgradeable._upgrade(new_class_hash);
         }
 
         fn get_balance(self: @ContractState, token: ContractAddress) -> u256 {
