@@ -1,5 +1,7 @@
 #[starknet::contract]
 mod QuestBoost {
+    use openzeppelin::access::ownable::interface::IOwnable;
+    use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use core::debug::PrintTrait;
     use core::option::OptionTrait;
     use core::traits::TryInto;
@@ -7,8 +9,9 @@ mod QuestBoost {
     use quest_boost_contract::interface::IQuestBoost;
     use core::starknet::event::EventEmitter;
     use core::array::SpanTrait;
-    use openzeppelin::token::erc20::interface::{
-        IERC20Camel, IERC20CamelDispatcher, IERC20CamelDispatcherTrait
+    use openzeppelin::{
+        account, access::ownable::OwnableComponent,
+        token::erc20::interface::{IERC20Camel, IERC20CamelDispatcher, IERC20CamelDispatcherTrait}
     };
     use starknet::{
         ContractAddress, contract_address_const, contract_address_to_felt252, get_block_timestamp,
@@ -18,13 +21,21 @@ mod QuestBoost {
     use ecdsa::check_ecdsa_signature;
     use core::pedersen::pedersen;
 
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+
+    // add an owner
+    #[abi(embed_v0)]
+    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
 
     #[storage]
     struct Storage {
         blacklist: LegacyMap::<u128, bool>,
         boostMap: LegacyMap::<u128, bool>,
         public_key: felt252,
-        _admin_address: ContractAddress
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
     }
 
     // events
@@ -32,7 +43,9 @@ mod QuestBoost {
     #[derive(Drop, starknet::Event)]
     enum Event {
         on_claim: on_claim,
-        on_fill: on_fill
+        on_fill: on_fill,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
     }
 
 
@@ -55,7 +68,7 @@ mod QuestBoost {
 
     #[constructor]
     fn constructor(ref self: ContractState, owner: ContractAddress, public_key: felt252) {
-        self._admin_address.write(owner);
+        self.ownable.initializer(owner);
         self.public_key.write(public_key);
     }
 
@@ -63,8 +76,8 @@ mod QuestBoost {
     impl QuestBoost of IQuestBoost<ContractState> {
         // ADMIN
         fn set_admin(ref self: ContractState, new_admin: ContractAddress) {
-            assert(get_caller_address() == self._admin_address.read(), 'you are not admin');
-            self._admin_address.write(new_admin);
+            assert(get_caller_address() == self.ownable.owner(), 'you are not admin');
+            self.ownable.transfer_ownership(new_admin);
         }
 
         fn create_boost(
@@ -93,7 +106,7 @@ mod QuestBoost {
             let balance = starknet_erc20.balanceOf(token.try_into().unwrap());
 
             // check if admin has called fill contract
-            assert(caller == self._admin_address.read(), 'only admin can withdraw');
+            assert(caller == self.ownable.owner(), 'only admin can withdraw');
 
             // transfer tokens from caller to contract
             let transfer_result = starknet_erc20.transfer(caller, balance);
@@ -156,7 +169,7 @@ mod QuestBoost {
         }
 
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
-            assert(get_caller_address() == self._admin_address.read(), 'you are not admin');
+            assert(get_caller_address() == self.ownable.owner(), 'you are not admin');
             // todo: use components
             assert(!new_class_hash.is_zero(), 'Class hash cannot be zero');
             starknet::replace_class_syscall(new_class_hash).unwrap();
