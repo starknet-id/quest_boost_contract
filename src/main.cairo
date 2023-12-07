@@ -87,7 +87,6 @@ mod QuestBoost {
 
         fn withdraw_all(ref self: ContractState, token: ContractAddress) {
             let caller: ContractAddress = get_caller_address();
-            let contract_address: ContractAddress = get_contract_address();
 
             let starknet_erc20 = IERC20CamelDispatcher { contract_address: token };
 
@@ -141,7 +140,6 @@ mod QuestBoost {
                 starknet_erc20.balanceOf(get_contract_address()) > amount,
                 'amount more than balance'
             );
-            starknet_erc20.approve(get_contract_address(), amount);
             // transfer tokens from caller to contract
             let transfer_result = starknet_erc20.transfer(caller, amount);
             assert(transfer_result, 'transfer failed');
