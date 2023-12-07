@@ -128,7 +128,7 @@ fn test_claim_invalid_caller() {
 
 #[test]
 #[available_gas(20000000000)]
-fn test_fill() {
+fn test_create_boost() {
     let quest_boost = deploy_contract();
     let erc20 = deploy_token(ADMIN(), 10000);
     let amount: u256 = 1000;
@@ -137,13 +137,15 @@ fn test_fill() {
     erc20.approve(quest_boost.contract_address, amount);
     let boost_id = 1;
     quest_boost.create_boost(boost_id, amount, token_id);
+    assert(erc20.balanceOf(quest_boost.contract_address) > 0, 'tokens did not transfer');
 }
 
 #[test]
 #[available_gas(20000000000)]
 fn test_withdraw_all() {
     let quest_boost = deploy_contract();
-    let erc20 = deploy_token(ADMIN(), 10000);
+    let erc20 = deploy_token(quest_boost.contract_address, 10000);
+    assert(erc20.balanceOf(quest_boost.contract_address) > 0, 'not enough balance');
     let token_id: ContractAddress = erc20.contract_address;
     set_contract_address(ADMIN());
     quest_boost.withdraw_all(token_id);
@@ -155,7 +157,8 @@ fn test_withdraw_all() {
 #[should_panic(expected: ('only admin can withdraw', 'ENTRYPOINT_FAILED',))]
 fn test_withdraw_all_not_owner() {
     let quest_boost = deploy_contract();
-    let erc20 = deploy_token(ADMIN(), 10000);
+    let erc20 = deploy_token(quest_boost.contract_address, 10000);
+    assert(erc20.balanceOf(quest_boost.contract_address) > 0, 'not enough balance');
     let token_id: ContractAddress = erc20.contract_address;
     set_contract_address(0x123.try_into().unwrap());
     quest_boost.withdraw_all(token_id);
