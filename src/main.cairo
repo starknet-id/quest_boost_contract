@@ -62,7 +62,9 @@ mod QuestBoost {
         timestamp: u64,
         amount: u256,
         #[key]
-        address: ContractAddress
+        address: ContractAddress,
+        #[key]
+        boost_id: u128
     }
 
     #[derive(Drop, starknet::Event)]
@@ -169,7 +171,10 @@ mod QuestBoost {
                 .emit(
                     Event::OnClaim(
                         on_claim {
-                            timestamp: get_block_timestamp(), amount: amount, address: caller
+                            timestamp: get_block_timestamp(),
+                            amount: amount,
+                            address: caller,
+                            boost_id: boost_id
                         }
                     )
                 );
