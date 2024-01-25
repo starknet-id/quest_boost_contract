@@ -87,7 +87,7 @@ mod QuestBoost {
         fn create_boost(
             ref self: ContractState, boost_id: u128, amount: u256, token: ContractAddress
         ) {
-            // check if boost_id is blacklisted
+            // check if boost_id is already created
             let boostMap_data = self.boostMap.read(boost_id);
             assert(!boostMap_data, 'boost already created');
 
