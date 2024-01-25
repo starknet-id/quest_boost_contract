@@ -35,7 +35,7 @@ mod QuestBoost {
 
     #[storage]
     struct Storage {
-        blacklist: LegacyMap::<u128, bool>,
+        blacklist: LegacyMap::<felt252, bool>,
         boostMap: LegacyMap::<u128, bool>,
         public_key: felt252,
         #[substorage(v0)]
@@ -133,7 +133,7 @@ mod QuestBoost {
             let s = *signature.at(1);
 
             // check if signature is blacklisted
-            let blacklist_data = self.blacklist.read(boost_id);
+            let blacklist_data = self.blacklist.read(r);
             assert(!blacklist_data, 'blacklisted');
 
             // check if signature is valid
@@ -152,7 +152,7 @@ mod QuestBoost {
             );
 
             // add r to the blacklist
-            self.blacklist.write(boost_id, true);
+            self.blacklist.write(r, true);
 
             // transfer tokens from contract to caller
             let starknet_erc20 = IERC20CamelDispatcher { contract_address: token };
