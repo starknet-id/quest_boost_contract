@@ -167,7 +167,29 @@ fn test_withdraw_all_not_owner() {
 #[test]
 #[available_gas(20000000000)]
 #[should_panic(expected: ('blacklisted', 'ENTRYPOINT_FAILED',))]
-fn test_duplicate_claim() {
+fn test_duplicate_claim_with_id() {
+    let quest_boost = deploy_contract();
+    let erc20 = deploy_token(quest_boost.contract_address, 10000);
+    let amount: u256 = 1000;
+    let token_id: ContractAddress = erc20.contract_address;
+    set_contract_address(ADMIN());
+    let (sig_0, sig_1) = (
+        765301107836623957948028135212947639996218756476579369944383988832488039190,
+        364743106737423797092878139014999646784167567917477096350335031799658835871
+    );
+    let boost_id = 1;
+    erc20.approve(ADMIN(), amount);
+    // make first valid call
+    quest_boost.claim(amount, token_id, boost_id, array![sig_0, sig_1].span());
+
+    // make second call with same signature
+    quest_boost.claim(amount, token_id, boost_id, array![sig_0, sig_1].span());
+}
+
+#[test]
+#[available_gas(20000000000)]
+#[should_panic(expected: ('blacklisted', 'ENTRYPOINT_FAILED',))]
+fn test_duplicate_claim_with_signature() {
     let quest_boost = deploy_contract();
     let erc20 = deploy_token(quest_boost.contract_address, 10000);
     let amount: u256 = 1000;
