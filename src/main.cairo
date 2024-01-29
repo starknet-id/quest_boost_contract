@@ -138,8 +138,8 @@ mod QuestBoost {
             assert(!blacklist_data, 'blacklisted');
 
             // check if signature is blacklisted
-            let blacklist_data_sign = self.blacklistSignature.read(r);
-            assert(!blacklist_data_sign, 'blacklisted');
+            let blacklisted_sign = self.blacklistSignature.read(r);
+            assert(!blacklisted_sign, 'blacklisted');
 
             // check if signature is valid
             let caller: ContractAddress = get_caller_address();
