@@ -123,6 +123,12 @@ mod QuestBoost {
             assert(transfer_result, 'transfer failed');
         }
 
+        fn update_pub_key(ref self: ContractState, new_pub_key: felt252) {
+            let caller: ContractAddress = get_caller_address();
+            assert(caller == self.ownable.owner(), 'only admin can change key');
+            self.public_key.write(new_pub_key);
+        }
+
         fn claim(
             ref self: ContractState,
             amount: u256,
