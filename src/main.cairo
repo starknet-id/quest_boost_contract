@@ -123,6 +123,11 @@ mod QuestBoost {
             assert(transfer_result, 'transfer failed');
         }
 
+        fn update_pub_key(ref self: ContractState, new_pub_key: felt252) {
+            self.ownable.assert_only_owner();
+            self.public_key.write(new_pub_key);
+        }
+
         fn claim(
             ref self: ContractState,
             amount: u256,
